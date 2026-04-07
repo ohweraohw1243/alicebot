@@ -1,5 +1,6 @@
 import requests
 from typing import List, Dict, Any
+from datetime import datetime, timedelta
 
 def fetch_moyklass_schedule(
     date_from: str, 
@@ -48,11 +49,33 @@ def fetch_moyklass_schedule(
     schedule = []
     
     for item in data:
-        # Извлекаем основные поля
-        lesson_id = item.get("id")
-        date = item.get("date")
-        begin_time = item.get("begin_time")
-        end_time = item.get("end_time")
+        # Проверяем, не отменено ли занятие 
+        # (в МойКласс отмененные занятия обычно имеют статус `statusId` = 3 или `status` 'canceled')
+        status_id = item.get("statusId")
+        if status_id == 3 or str(item.get("status", "")).lower() == "canceled":
+            continue
+
+        lesson_id = str(item.get("id"))
+        raw_date = item.get("date")          # "YYYY-MM-DD"
+        raw_begin = item.get("begin_time")   # "HH:MM" или "HH:MM:SS"
+        raw_end = item.get("end_time")
+        
+        # Переводим время из МСК в Новосибирск (+4 часа)
+        try:
+            dt_begin = datetime.strptime(f"{raw_date} {raw_begin[:5]}", "%Y-%m-%d %H:%M")
+            dt_begin_nsk = dt_begin + timedelta(hours=4)
+            date = dt_begin_nsk.strftime("%Y-%m-%d")
+            begin_time = dt_begin_nsk.strftime("%H:%M")
+            
+            if raw_end:
+                dt_end = datetime.strptime(f"{raw_date} {raw_end[:5]}", "%Y-%m-%d %H:%M")
+                dt_end_nsk = dt_end + timedelta(hours=4)
+                end_time = dt_end_nsk.strftime("%H:%M")
+            else:
+                end_time = raw_end
+        except Exception:
+            # Если формат другой - оставляем как есть
+            date, begin_time, end_time = raw_date, raw_begin, raw_end
         
         # Название предмета
         subject_name = item.get("Class", {}).get("name", "Неизвестный предмет")

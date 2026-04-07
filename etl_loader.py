@@ -42,6 +42,10 @@ def insert_events(events: list):
     conn = get_connection()
     try:
         with conn.cursor() as cur:
+            # Сначала удаляем все будущие занятия, чтобы обрабатывать отмены 
+            # (если занятие исчезло из МойКласс, оно должно исчезнуть из БД)
+            cur.execute("DELETE FROM events WHERE event_date >= CURRENT_DATE")
+            
             query = """
                 INSERT INTO events (id, event_date, event_time, title, event_type, duration_min, notes)
                 VALUES %s
@@ -68,7 +72,7 @@ def run_etl():
     # 1. Извлекаем (Extract) и трансформируем (Transform) НГТУ (без авторизации)
     print("Собираем расписание из НГТУ...")
     try:
-        nstu_raw = fetch_nstu_schedule("АВТ-11")
+        nstu_raw = fetch_nstu_schedule("ФБИ-34")
         # Вычисляем даты для текущей недели
         today = datetime.today()
         start_of_week = today - timedelta(days=today.weekday())
@@ -98,12 +102,40 @@ def run_etl():
         
     # 2. Извлекаем (Extract) и трансформируем (Transform) МойКласс (если есть токены)
     print("Собираем расписание из МойКласс (CRM)...")
-    # Добавьте сюда ваши реальные данные для авторизации (лучше вынести их в .env)
-    # mk_events = fetch_moyklass_schedule(...)
-    # for ev in mk_events: db_events.append([ev["id"], ev["date"], ev["begin_time"], ev["title"], "tutoring", 60, ""])
-    print("Пропуск МойКласс (отсутствуют credentials в скрипте)")
+    try:
+        connect_sid = os.getenv("MK_CONNECT_SID")
+        if connect_sid:
+            date_from = start_of_week.strftime("%Y-%m-%d")
+            date_to = (start_of_week + timedelta(days=6)).strftime("%Y-%m-%d")
+            
+            mk_events = fetch_moyklass_schedule(
+                date_from=date_from,
+                date_to=date_to,
+                filial_id=os.getenv("MK_FILIAL_ID", ""),
+                room_id=os.getenv("MK_ROOM_ID", ""),
+                teacher_id=os.getenv("MK_TEACHER_ID", ""),
+                connect_sid=connect_sid,
+                device_id=os.getenv("MK_DEVICE_ID", ""),
+                version=os.getenv("MK_VERSION", "")
+            )
+            for ev in mk_events: 
+                # (id, event_date, event_time, title, event_type, duration_min, notes)
+                db_events.append((
+                    str(ev["id"]), 
+                    ev["date"], 
+                    ev["begin_time"], 
+                    ev["title"], 
+                    "tutoring", 
+                    60, 
+                    "Занятие в МойКласс"
+                ))
+            print(f"Из МойКласс получено {len(mk_events)} занятий.")
+        else:
+            print("Пропуск МойКласс (отсутствует токен MK_CONNECT_SID в .env)")
+    except Exception as e:
+        print(f"Ошибка парсинга МойКласс: {e}")
 
-    # 3. Загружаем (Load) в ClickHouse
+    # 3. Загружаем (Load) в PostgreSQL
     print("Загрузка данных в ClickHouse...")
     insert_events(db_events)
 

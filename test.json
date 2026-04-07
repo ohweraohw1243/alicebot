@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "locale": "ru-RU",
+    "timezone": "UTC",
+    "client_id": "ru.yandex.searchplugin/7.16 (none none; android 4.4.2)",
+    "interfaces": {
+      "screen": {},
+      "payments": {},
+      "account_linking": {}
+    }
+  },
+  "session": {
+    "message_id": 0,
+    "session_id": "49a67ae5-246f-4710-a707-4102f771c1cd",
+    "skill_id": "609c16f3-e88a-4885-b1c0-303ac1570140",
+    "user": {
+      "user_id": "632A4B67B7ADB3A54ABA61E57170E4F0F72FBBC384F602E61FD30E5B4844AA3A"
+    },
+    "application": {
+      "application_id": "32D3D05752A0A2A5A37295D92194530115FC5D827F29F89F260134F8FD7D6D57"
+    },
+    "user_id": "32D3D05752A0A2A5A37295D92194530115FC5D827F29F89F260134F8FD7D6D57",
+    "new": true
+  },
+  "request": {
+    "command": "мое расписание",
+    "original_utterance": "мое расписание",
+    "nlu": {
+      "tokens": [
+        "мое",
+        "расписание"
+      ],
+      "entities": [],
+      "intents": {}
+    },
+    "markup": {
+      "dangerous_context": false
+    },
+    "type": "SimpleUtterance"
+  },
+  "version": "1.0"
+}

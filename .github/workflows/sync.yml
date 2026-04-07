@@ -33,5 +33,11 @@ jobs:
           SUPABASE_DB: ${{ secrets.SUPABASE_DB }}
           SUPABASE_USER: ${{ secrets.SUPABASE_USER }}
           SUPABASE_PASSWORD: ${{ secrets.SUPABASE_PASSWORD }}
+          MK_CONNECT_SID: ${{ secrets.MK_CONNECT_SID }}
+          MK_FILIAL_ID: ${{ secrets.MK_FILIAL_ID }}
+          MK_ROOM_ID: ${{ secrets.MK_ROOM_ID }}
+          MK_TEACHER_ID: ${{ secrets.MK_TEACHER_ID }}
+          MK_DEVICE_ID: ${{ secrets.MK_DEVICE_ID }}
+          MK_VERSION: ${{ secrets.MK_VERSION }}
         run: |
           python etl_loader.py
