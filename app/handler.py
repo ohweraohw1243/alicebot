@@ -20,6 +20,23 @@ def process_alice_request(req_data: dict) -> dict:
         target_date += datetime.timedelta(days=2)
     elif "сегодня" in command:
         intent = "today"
+    else:
+        # Проверяем дни недели
+        weekdays = {
+            "понедельник": 0,
+            "вторник": 1,
+            "сред": 2,
+            "четверг": 3,
+            "пятниц": 4,
+            "суббот": 5,
+            "воскресень": 6
+        }
+        for wd_word, wd_idx in weekdays.items():
+            if wd_word in command:
+                intent = f"weekday_{wd_idx}"
+                # Вычисляем дату этого дня недели на текущей неделе
+                target_date = target_date - datetime.timedelta(days=target_date.weekday()) + datetime.timedelta(days=wd_idx)
+                break
     
     # Форматируем дату для поиска в БД
     date_str = target_date.strftime("%Y-%m-%d")
