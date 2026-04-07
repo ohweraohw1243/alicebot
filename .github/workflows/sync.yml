@@ -1,0 +1,37 @@
+name: Sync Schedule (ETL)
+
+on:
+  schedule:
+    # Запуск каждые 30 минут
+    - cron: '*/30 * * * *'
+  # Кнопка для ручного запуска из интерфейса GitHub
+  workflow_dispatch: 
+
+jobs:
+  update-schedule:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run ETL Process
+        env:
+          SUPABASE_HOST: ${{ secrets.SUPABASE_HOST }}
+          SUPABASE_PORT: ${{ secrets.SUPABASE_PORT }}
+          SUPABASE_DB: ${{ secrets.SUPABASE_DB }}
+          SUPABASE_USER: ${{ secrets.SUPABASE_USER }}
+          SUPABASE_PASSWORD: ${{ secrets.SUPABASE_PASSWORD }}
+        run: |
+          python etl_loader.py
