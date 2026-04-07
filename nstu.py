@@ -39,6 +39,7 @@ def fetch_nstu_schedule(group_name: str) -> List[Dict[str, Any]]:
     
     schedule = []
     current_day = None
+    current_time = None
     
     # Находим главный контейнер
     table_body = soup.find("div", class_="schedule__table-body")
@@ -65,11 +66,14 @@ def fetch_nstu_schedule(group_name: str) -> List[Dict[str, Any]]:
             current_day = day_elem.text.strip()
             
         time_elem = row.find("div", class_="schedule__table-time")
+        if time_elem and time_elem.text.strip():
+            current_time = time_elem.text.strip()
+            
         item_elem = row.find("div", class_="schedule__table-item")
         class_elem = row.find("div", class_="schedule__table-class")
         
-        if time_elem and item_elem:
-            time_text = time_elem.text.strip()
+        if current_time and item_elem:
+            time_text = current_time
             item_text = item_elem.text.strip()
             class_text = class_elem.text.strip() if class_elem else ""
             
@@ -90,12 +94,15 @@ def fetch_nstu_schedule(group_name: str) -> List[Dict[str, Any]]:
             if current_week and not is_class_this_week(week_type, current_week):
                 continue
                 
-            schedule.append({
+            event = {
                 "day": current_day,
                 "time": time_text,
                 "week_type": week_type,
                 "subject": subject,
                 "room": class_text
-            })
+            }
+            
+            if event not in schedule:
+                schedule.append(event)
             
     return schedule
