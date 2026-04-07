@@ -3,6 +3,26 @@ from bs4 import BeautifulSoup
 import re
 from typing import List, Dict, Any
 
+def is_class_this_week(week_type: str, current_week: int) -> bool:
+    """
+    Проверяет, должна ли пара проводиться на текущей неделе.
+    """
+    if not week_type or not current_week:
+        return True
+        
+    wt = week_type.lower()
+    
+    if "нечётным" in wt:
+        return current_week % 2 != 0
+    elif "чётным" in wt:
+        return current_week % 2 == 0
+    elif "недели" in wt:
+        weeks = [int(x) for x in re.findall(r'\d+', wt)]
+        if weeks:
+            return current_week in list(weeks)
+            
+    return True
+
 def fetch_nstu_schedule(group_name: str) -> List[Dict[str, Any]]:
     """
     Парсит расписание занятий университета НГТУ.
@@ -24,6 +44,17 @@ def fetch_nstu_schedule(group_name: str) -> List[Dict[str, Any]]:
     table_body = soup.find("div", class_="schedule__table-body")
     if not table_body:
         return schedule
+        
+    # Ищем текущую учебную неделю с главной страницы, так как на print=true ее нет
+    current_week = None
+    try:
+        main_url = f"https://www.fb.nstu.ru/study_process/schedule/schedule_classes/schedule?group={group_name}"
+        main_response = requests.get(main_url)
+        week_match = re.search(r'(\d+)\s+учебная неделя', main_response.text)
+        if week_match:
+            current_week = int(week_match.group(1))
+    except Exception:
+        pass
         
     rows = table_body.find_all("div", class_="schedule__table-row")
     
@@ -54,6 +85,10 @@ def fetch_nstu_schedule(group_name: str) -> List[Dict[str, Any]]:
             if match:
                 week_type = match.group(1).strip()
                 subject = match.group(2).strip()
+                
+            # Проверяем, подходит ли пара под номер текущей недели
+            if current_week and not is_class_this_week(week_type, current_week):
+                continue
                 
             schedule.append({
                 "day": current_day,
