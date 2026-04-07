@@ -1,0 +1,19 @@
+name: aliceschedule
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: aliceschedule_clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+      - clickhouse_data:/var/lib/clickhouse
+    environment:
+      - CLICKHOUSE_USER=alice
+      - CLICKHOUSE_PASSWORD=alice
+      - CLICKHOUSE_DB=schedule
+
+volumes:
+  clickhouse_data:
