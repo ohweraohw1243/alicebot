@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, timedelta
-import clickhouse_connect
+import psycopg2
+import psycopg2.extras
 from dotenv import load_dotenv
 
 from moyklass import fetch_moyklass_schedule
@@ -19,32 +20,46 @@ WEEKDAYS = {
     "Воскресенье": 6
 }
 
-def get_client():
-    return clickhouse_connect.get_client(
-        host=os.getenv("CH_HOST", "localhost"),
-        port=int(os.getenv("CH_PORT", 8123)),
-        username=os.getenv("CH_USER", "default"),
-        password=os.getenv("CH_PASSWORD", "")
+def get_connection():
+    return psycopg2.connect(
+        host=os.getenv("SUPABASE_HOST", "db.nzcarrvtenhknxuwvono.supabase.co"),
+        port=os.getenv("SUPABASE_PORT", "5432"),
+        database=os.getenv("SUPABASE_DB", "postgres"),
+        user=os.getenv("SUPABASE_USER", "postgres"),
+        password=os.getenv("SUPABASE_PASSWORD", "")
     )
 
 def insert_events(events: list):
     """
-    Вставляет список распарсенных событий в БД clickhouse.
+    Вставляет список распарсенных событий в БД PostgreSQL.
     Ожидаемый формат строки:
-    [id, event_date, event_time, title, event_type, duration_min, notes]
+    (id, event_date, event_time, title, event_type, duration_min, notes)
     """
     if not events:
         print("Нет данных для вставки.")
         return
         
-    client = get_client()
-    columns = ['id', 'event_date', 'event_time', 'title', 'event_type', 'duration_min', 'notes']
-    
+    conn = get_connection()
     try:
-        client.insert('schedule.events', events, column_names=columns)
+        with conn.cursor() as cur:
+            query = """
+                INSERT INTO events (id, event_date, event_time, title, event_type, duration_min, notes)
+                VALUES %s
+                ON CONFLICT (id) DO UPDATE SET
+                    event_date = EXCLUDED.event_date,
+                    event_time = EXCLUDED.event_time,
+                    title = EXCLUDED.title,
+                    event_type = EXCLUDED.event_type,
+                    duration_min = EXCLUDED.duration_min,
+                    notes = EXCLUDED.notes
+            """
+            psycopg2.extras.execute_values(cur, query, events)
+        conn.commit()
         print(f"Успешно загружено {len(events)} событий в базу данных.")
     except Exception as e:
         print(f"Ошибка при загрузке данных: {e}")
+    finally:
+        conn.close()
 
 def run_etl():
     print("Начат процесс ETL для сбора расписания...")
