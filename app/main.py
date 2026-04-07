@@ -4,6 +4,14 @@ from app.db import log_alice_request
 
 app = FastAPI(title="AliceSchedule Webhook", description="Алиса Навык для планировщика расписания")
 
+@app.get("/")
+async def health_check():
+    """
+    Эндпоинт для проверки активности сервера (ping).
+    Полезен для предотвращения "засыпания" бесплатного сервера на Render.
+    """
+    return {"status": "ok", "app": "AliceSchedule"}
+
 @app.post("/alice")
 async def alice_endpoint(request: Request):
     """
