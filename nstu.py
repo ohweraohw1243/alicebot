@@ -90,6 +90,10 @@ def fetch_nstu_schedule(group_name: str) -> List[Dict[str, Any]]:
                 week_type = match.group(1).strip()
                 subject = match.group(2).strip()
                 
+            # Убираем ФИО преподавателя (всё, что после символа "·")
+            if '·' in subject:
+                subject = subject.split('·')[0].strip()
+                
             # Проверяем, подходит ли пара под номер текущей недели
             if current_week and not is_class_this_week(week_type, current_week):
                 continue

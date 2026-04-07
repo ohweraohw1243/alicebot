@@ -80,6 +80,10 @@ def fetch_moyklass_schedule(
         # Название предмета
         subject_name = item.get("Class", {}).get("name", "Неизвестный предмет")
         
+        # Очищаем название от лишних деталей (например, "Стандарт 2 раза в неделю")
+        import re
+        subject_name = re.sub(r'(\s+(Стандарт|Индивидуально|Группа))?(\s*\d+\s*(раз|раза|занятие|занятия)\s*в\s*неделю.*)?', '', subject_name, flags=re.IGNORECASE).strip()
+        
         # Имена учеников
         students = []
         for record in item.get("LessonRecords", []):
