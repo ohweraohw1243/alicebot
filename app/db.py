@@ -21,8 +21,9 @@ def get_events_for_date(target_date: str) -> list:
     """
     Получает расписание на определенную дату (формат YYYY-MM-DD).
     """
-    conn = get_connection()
+    conn = None
     try:
+        conn = get_connection()
         with conn.cursor() as cur:
             query = """
                 SELECT event_time, title, event_type, notes 
@@ -33,14 +34,16 @@ def get_events_for_date(target_date: str) -> list:
             cur.execute(query, (target_date,))
             return cur.fetchall()
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 def log_alice_request(request_id: str, utterance: str, intent: str, response: str):
     """
     Логирует запрос от Алисы и выданный ответ.
     """
-    conn = get_connection()
+    conn = None
     try:
+        conn = get_connection()
         with conn.cursor() as cur:
             query = """
                 INSERT INTO alice_request_log (request_id, utterance, intent, response)
@@ -51,4 +54,5 @@ def log_alice_request(request_id: str, utterance: str, intent: str, response: st
     except Exception as e:
         print(f"Ошибка логирования запроса: {e}")
     finally:
-        conn.close()
+        if conn:
+            conn.close()
