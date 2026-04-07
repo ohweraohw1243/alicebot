@@ -9,8 +9,17 @@ from nstu import fetch_nstu_schedule
 
 load_dotenv()
 
+import uuid
+
 # Соответствие дней недели НГТУ номерам дней
 WEEKDAYS = {
+    "пн": 0,
+    "вт": 1,
+    "ср": 2,
+    "чт": 3,
+    "пт": 4,
+    "сб": 5,
+    "вс": 6,
     "Понедельник": 0,
     "Вторник": 1,
     "Среда": 2,
@@ -86,17 +95,18 @@ def run_etl():
                 # Время в НГТУ обычно в формате "08:30 - 10:00" - вытаскиваем начало
                 begin_time = item["time"].split("-")[0].strip() if "-" in item["time"] else item["time"]
                 
-                # Добавляем в общий список
-                # id, event_date, event_time, title, event_type, duration_min, notes
-                db_events.append([
-                    f"nstu_{event_date}_{begin_time}",
-                    event_date,
-                    begin_time,
-                    item["subject"],
-                    "university",
-                    90,
-                    f"Аудитория: {item['room']} | Неделя: {item['week_type']}"
-                ])
+                # Добавляем в общий список только если есть название предмета
+                if item["subject"]:
+                    unique_id = f"nstu_{event_date}_{begin_time}_{uuid.uuid4().hex[:8]}"
+                    db_events.append((
+                        unique_id,
+                        event_date,
+                        begin_time,
+                        item["subject"],
+                        "university",
+                        90,
+                        f"Аудитория: {item['room']} | Неделя: {item['week_type']}"
+                    ))
     except Exception as e:
         print(f"Ошибка парсинга НГТУ: {e}")
         
